@@ -62,7 +62,7 @@ namespace TestGenerator
                 {
                     name = basicType.Name.ToLower();
                 }
-                if(name == typeName.Trim().ToLower())
+                if(name == typeName.ToLower())
                 {
                     return basicType;
                 }
@@ -71,7 +71,7 @@ namespace TestGenerator
         }
         static StatementType TokenType(string token)
         {
-            switch(token.Trim())
+            switch(token)
             {
                 case "READ":
                     return StatementType.Read;
@@ -103,7 +103,7 @@ namespace TestGenerator
                 try
                 {
                     lineNum++;
-                    string line = file.ReadLine();
+                    string line = file.ReadLine().Trim();
                     if(line.Split(' ').Length < 2)
                     {
                         continue;
@@ -134,11 +134,15 @@ namespace TestGenerator
                     else if (currentStatment.statmentType == StatementType.Closure)
                     {
                         Statement statment = Conditions.Pop();
+                        if(statment.statmentType == StatementType.Condition && currentStatment.Value != "END IF")
+                        {
+                            throw new Exception($"Expected \"END IF\", Found \"{currentStatment.Value}\"");
+                        }
                         statment.nextStatements.Add(currentStatment);
                     }
                     else if (currentStatment.statmentType == StatementType.Value)
                     {
-                        if(!testProgram.variables.TryGetValue(line.Split(' ')[0].Trim(), out Type val))
+                        if(!testProgram.variables.TryGetValue(line.Split(' ')[0], out Type val))
                         {
                             string type = line.Split(' ')[0];
                             string name = line.Split(' ')[1];
@@ -148,10 +152,83 @@ namespace TestGenerator
                 }
                 catch(Exception e)
                 {
-                    throw new Exception($"Line #{lineNum}: {e.Message}");
+                    throw new Exception($"Parser:\nLine #{lineNum}: {e.Message}");
                 }
             }
             return testProgram;
+        }
+        static void DisplayProgram(TestProgram testProgram)
+        {
+            Console.WriteLine("Program:\n\tVariables:");
+            foreach (KeyValuePair<string, Type> variable in testProgram.variables)
+            {
+                Console.WriteLine($"\t\t{variable.Key} : {variable.Value.FullName}");
+            }
+            Console.WriteLine("\tGraph:");
+            int conditions = 0;
+            Statement currentStatement = testProgram.rootStatement;
+            while (true)
+            {
+                Console.Write("\t\t");
+                for (int i = 0; i < conditions; i++)
+                {
+                    Console.Write(" |");
+                }
+                Console.WriteLine($" {currentStatement.Value}");
+                if (currentStatement.nextStatements.Count == 0)
+                {
+                    break;
+                }
+                Console.Write("\t\t");
+                for (int i = 0; i < conditions; i++)
+                {
+                    Console.Write(" |");
+                }
+                if (currentStatement.statmentType == StatementType.Condition)
+                {
+                    Console.WriteLine(" |\\");
+                    conditions++;
+                }
+                else if (currentStatement.statmentType == StatementType.Closure)
+                {
+                    Console.WriteLine("/");
+                    conditions--;
+                }
+                else
+                {
+                    Console.WriteLine(" |");
+                }
+                currentStatement = currentStatement.nextStatements[0];
+            }
+        }
+        static Statement[][] GetAllPaths(TestProgram testProgram)
+        {
+            List<Statement[]> paths = new List<Statement[]>();
+            List<Statement> tmp = new List<Statement>();
+            void getPath(Statement statement)
+            {
+                if(!statement.Value.Contains("END"))
+                {
+                    tmp.Add(statement);
+                }
+                if(statement.nextStatements.Count > 0)
+                {
+                    foreach(Statement next in statement.nextStatements)
+                    {
+                        getPath(next);
+                    }
+                }
+                else
+                {
+                    paths.Add(tmp.ToArray());
+                }
+                if (!statement.Value.Contains("END"))
+                {
+                    tmp.RemoveAt(tmp.Count - 1);
+                }
+            }
+            getPath(testProgram.rootStatement);
+            return paths.ToArray();
         }
         static void Main(string[] args)
         {
@@ -160,46 +237,25 @@ namespace TestGenerator
                 Console.Write("Enter file name: ");
                 string fileName = Console.ReadLine().Trim();
                 TestProgram testProgram = GetProgram(fileName);
-                Console.WriteLine("Analysis Completed:\n\tVariables:");
-                foreach(KeyValuePair<string, Type> variable in testProgram.variables)
+                DisplayProgram(testProgram);
+                Console.WriteLine("Paths:");
+                Statement[][] paths = GetAllPaths(testProgram);
+                foreach(Statement[] path in paths)
                 {
-                    Console.WriteLine($"\t\t{variable.Key} : {variable.Value.FullName}");
-                }
-                Console.WriteLine("\tGraph:");
-                int conditions = 0;
-                Statement currentStatement = testProgram.rootStatement;
-                while(true)
-                {
-                    Console.Write("\t\t");
-                    for (int i = 0; i < conditions; i++)
+                    bool first = true;
+                    foreach(Statement node in path)
                     {
-                        Console.Write(" |");
+                        if(!first)
+                        {
+                            Console.Write("->");
+                        }
+                        else
+                        {
+                            first = false;
+                        }
+                        Console.Write($"({node.Value})");
                     }
-                    Console.WriteLine($" {currentStatement.Value.Trim()}");
-                    if(currentStatement.nextStatements.Count == 0)
-                    {
-                        break;
-                    }
-                    Console.Write("\t\t");
-                    for (int i = 0; i < conditions; i++)
-                    {
-                        Console.Write(" |");
-                    }
-                    if(currentStatement.statmentType == StatementType.Condition)
-                    {
-                        Console.WriteLine(" |\\");
-                        conditions++;
-                    }
-                    else if(currentStatement.statmentType == StatementType.Closure)
-                    {
-                        Console.WriteLine("/");
-                        conditions--;
-                    }
-                    else
-                    {
-                        Console.WriteLine(" |");
-                    }
-                    currentStatement = currentStatement.nextStatements[0];
+                    Console.WriteLine();
                 }
             }
             catch(Exception e)
