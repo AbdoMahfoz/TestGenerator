@@ -1,0 +1,9 @@
+﻿
+
+int a
+int b
+READ a
+READ b
+IF a > b
+	PRINT a
+PRINT b

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace TestGenerator
 {
-    public enum StatementType { Read, Write, Condition, Loop, Closure, Value }
+    public enum StatementType { Read, Write, Condition, Loop, Closure, Value, Declaration }
     public class TestProgram
     {
         public Statement rootStatement;
@@ -20,6 +20,7 @@ namespace TestGenerator
     }
     public class Statement
     {
+        public TestProgram testProgram;
         public List<Statement> nextStatements;
         public StatementType statmentType;
         public string Value;
@@ -27,8 +28,9 @@ namespace TestGenerator
         {
             nextStatements = new List<Statement>();
         }
-        public Statement(string Value, StatementType statmentType, params Statement[] nextStatements)
+        public Statement(string Value, StatementType statmentType, TestProgram testProgram, params Statement[] nextStatements)
         {
+            this.testProgram = testProgram;
             this.Value = Value;
             this.statmentType = statmentType;
             this.nextStatements = new List<Statement>(nextStatements);
@@ -36,7 +38,15 @@ namespace TestGenerator
     }
     public class TestCase
     {
-
+        public Dictionary<string, object> Values;
+        public TestCase()
+        {
+            Values = new Dictionary<string, object>();
+        }
+        public TestCase(params KeyValuePair<string, object>[] Values)
+        {
+            this.Values = new Dictionary<string, object>(Values);
+        }
     }
     public class UserViewableException : Exception
     {
