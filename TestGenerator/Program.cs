@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 
 namespace TestGenerator
 {
@@ -41,12 +39,26 @@ namespace TestGenerator
                     Console.WriteLine();
                 }
             }
-            catch(UserViewableException e)
+            catch(Exception e)
             {
-                ConsoleColor oldColor = Console.ForegroundColor;
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"Fatal Error: {e.Message}");
-                Console.ForegroundColor = oldColor;
+                if(e is UserViewableException v)
+                {
+                    ConsoleColor oldColor = Console.ForegroundColor;
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Fatal Error:{e.Message}");
+                    Console.ForegroundColor = oldColor;
+                }
+                else if(e is NotImplementedException n)
+                {
+                    ConsoleColor oldColor = Console.ForegroundColor;
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"The given code required a non implemented feature: {e.Message}");
+                    Console.ForegroundColor = oldColor;
+                }
+                else
+                {
+                    throw e;
+                }
             }
         }
     }

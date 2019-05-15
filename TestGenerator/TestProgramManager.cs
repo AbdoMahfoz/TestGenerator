@@ -16,18 +16,9 @@ namespace TestGenerator
             foreach (Type basicType in basicTypes)
             {
                 string name = "";
-                if (nameMapping.TryGetValue(basicType, out string val))
-                {
-                    name = val;
-                }
-                else
-                {
-                    name = basicType.Name.ToLower();
-                }
-                if (name == typeName.ToLower())
-                {
-                    return basicType;
-                }
+                if (nameMapping.TryGetValue(basicType, out string val)) name = val;
+                else name = basicType.Name.ToLower();
+                if (name == typeName.ToLower()) return basicType;
             }
             throw new UserViewableException($"{typeName} is either not a known basic type or poorly formatted");
         }
@@ -74,28 +65,13 @@ namespace TestGenerator
                 {
                     lineNum++;
                     string line = file.ReadLine().Trim();
-                    if (line.Split(' ').Length < 2)
-                    {
-                        continue;
-                    }
+                    if (line.Split(' ').Length < 2) continue;
                     string identifier = "";
-                    if (line.Contains("END"))
-                    {
-                        identifier = string.Join(' ', line.Split(' ')[0], line.Split(' ')[1]);
-                    }
-                    else
-                    {
-                        identifier = line.Split(' ')[0];
-                    }
-                    Statement currentStatment = new Statement(line, TokenType(identifier));
-                    if (lastStatement == null)
-                    {
-                        testProgram.rootStatement = currentStatment;
-                    }
-                    else
-                    {
-                        lastStatement.nextStatements.Add(currentStatment);
-                    }
+                    if (line.Contains("END")) identifier = string.Join(' ', line.Split(' ')[0], line.Split(' ')[1]);
+                    else identifier = line.Split(' ')[0];
+                    Statement currentStatment = new Statement(line, TokenType(identifier), testProgram);
+                    if (lastStatement == null) testProgram.rootStatement = currentStatment;
+                    else lastStatement.nextStatements.Add(currentStatment);
                     lastStatement = currentStatment;
                     if (currentStatment.statmentType == StatementType.Condition || currentStatment.statmentType == StatementType.Loop)
                     {
@@ -114,15 +90,16 @@ namespace TestGenerator
                     {
                         if (!testProgram.variables.TryGetValue(line.Split(' ')[0], out Type val))
                         {
+                            currentStatment.statmentType = StatementType.Declaration;
                             string type = line.Split(' ')[0];
                             string name = line.Split(' ')[1];
                             testProgram.variables.Add(name, GetType(type));
                         }
                     }
                 }
-                catch (UserViewableException e)
+                catch (Exception e)
                 {
-                    throw new UserViewableException($"Parser:\nLine #{lineNum}: {e.Message}");
+                    throw new UserViewableException($"ParserError:\nLine #{lineNum}: {e.Message}");
                 }
             }
             return testProgram;
@@ -145,10 +122,7 @@ namespace TestGenerator
                     Console.Write(" |");
                 }
                 Console.WriteLine($" {currentStatement.Value}");
-                if (currentStatement.nextStatements.Count == 0)
-                {
-                    break;
-                }
+                if (currentStatement.nextStatements.Count == 0) break;
                 Console.Write("\t\t");
                 for (int i = 0; i < conditions; i++)
                 {
@@ -177,10 +151,7 @@ namespace TestGenerator
             List<Statement> tmp = new List<Statement>();
             void getPath(Statement statement)
             {
-                if (!statement.Value.Contains("END"))
-                {
-                    tmp.Add(statement);
-                }
+                if (!statement.Value.Contains("END")) tmp.Add(statement);
                 if (statement.nextStatements.Count > 0)
                 {
                     foreach (Statement next in statement.nextStatements)
@@ -188,14 +159,8 @@ namespace TestGenerator
                         getPath(next);
                     }
                 }
-                else
-                {
-                    paths.Add(tmp.ToArray());
-                }
-                if (!statement.Value.Contains("END"))
-                {
-                    tmp.RemoveAt(tmp.Count - 1);
-                }
+                else paths.Add(tmp.ToArray());
+                if (!statement.Value.Contains("END")) tmp.RemoveAt(tmp.Count - 1);
             }
             getPath(testProgram.rootStatement);
             return paths.ToArray();
