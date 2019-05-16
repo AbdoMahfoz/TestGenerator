@@ -75,92 +75,91 @@ namespace TestGenerator
             }
             throw new Exception("An unknown variable type attempted to parse it's value string. Please update TestCaseGenerator.GetValue method");
         }
+        static string FlipOperator(string op)
+        {
+            string res = "";
+            switch(op[0])
+            {
+                case '<':
+                    res = ">";
+                    break;
+                case '>':
+                    res = "<";
+                    break;
+                case '=':
+                    res = "=";
+                    break;
+                default:
+                    throw new Exception($"FlipOperator given invalid operator {op}");
+            }
+            if (op.Length > 1) res += "=";
+            return res;
+        }
         static List<Pair<TestCase, int>> GetCasesFromExpression(object[] expression, string op, Dictionary<string, Pair<object, object>> variables)
         {
             List<Pair<TestCase, int>> OneVariableCases(string varName, object constant)
             {
                 List<Pair<TestCase, int>> res = new List<Pair<TestCase, int>>();
-                Random r = new Random(DateTime.Now.Second);
-                if (constant.GetType() != typeof(short))
+                res.AddRange(new Pair<TestCase, int>[]
                 {
-                    res.AddRange(new Pair<TestCase, int>[]
+                    new Pair<TestCase, int>
                     {
-                        new Pair<TestCase, int>
+                        First = new TestCase
                         {
-                            First = new TestCase
+                            Values = new Dictionary<string, object>()
                             {
-                                Values = new Dictionary<string, object>()
-                                {
-                                    { varName, r.Next((int)constant - 1) }
-                                }
-                            },
-                            Second = (op[0] == '<') ? 0 : 1
+                                { varName, variables[varName].First ?? ((constant.GetType() == typeof(int)) ? int.MinValue : short.MinValue) }
+                            }
                         },
-                        new Pair<TestCase, int>
+                        Second = (op[0] == '<') ? 0 : 1
+                    },
+                    new Pair<TestCase, int>
+                    {
+                        First = new TestCase
                         {
-                            First = new TestCase
+                            Values = new Dictionary<string, object>()
                             {
-                                Values = new Dictionary<string, object>()
-                                {
-                                    { varName, r.Next((int)constant + 1, int.MaxValue) }
-                                }
-                            },
-                            Second = (op[0] == '>') ? 0 : 1
+                                { varName, variables[varName].Second ?? ((constant.GetType() == typeof(int)) ? int.MaxValue : short.MaxValue) }
+                            }
                         },
-                        new Pair<TestCase, int>
+                        Second = (op[0] == '>') ? 0 : 1
+                    },
+                    new Pair<TestCase, int>
+                    {
+                        First = new TestCase
                         {
-                            First = new TestCase
+                            Values = new Dictionary<string, object>()
                             {
-                                Values = new Dictionary<string, object>()
-                                {
-                                    { varName, constant }
-                                }
-                            },
-                            Second = (op.Length == 2) ? 0 : 1
+                                { varName, constant }
+                            }
                         },
-                    });
-                }
-                else
+                        Second = (op.Length == 2) ? 0 : 1
+                    },
+                });
+                Pair<object, object> range = variables[varName];
+                switch(op[0])
                 {
-                    res.AddRange(new Pair<TestCase, int>[]
-                    {
-                        new Pair<TestCase, int>
-                        {
-                            First = new TestCase
-                            {
-                                Values = new Dictionary<string, object>()
-                                {
-                                    { varName, r.Next((short)constant - 1) }
-                                }
-                            },
-                            Second = (op[0] == '<') ? 0 : 1
-                        },
-                        new Pair<TestCase, int>
-                        {
-                            First = new TestCase
-                            {
-                                Values = new Dictionary<string, object>()
-                                {
-                                    { varName, r.Next((short)constant + 1, short.MaxValue) }
-                                }
-                            },
-                            Second = (op[0] == '>') ? 0 : 1
-                        },
-                        new Pair<TestCase, int>
-                        {
-                            First = new TestCase
-                            {
-                                Values = new Dictionary<string, object>()
-                                {
-                                    { varName, constant }
-                                }
-                            },
-                            Second = (op.Length == 2) ? 0 : 1
-                        },
-                    }); ;
+                    case '<':
+                        if(op.Length > 1)
+                            range.Second = (constant.GetType() == typeof(int)) ? (int)constant : (short)constant;
+                        else
+                            range.Second = (constant.GetType() == typeof(int)) ? (int)constant - 1 : (short)constant - 1;
+                        break;
+                    case '>':
+                        if (op.Length > 1)
+                            range.Second = (constant.GetType() == typeof(int)) ? (int)constant : (short)constant;
+                        else
+                            range.Second = (constant.GetType() == typeof(int)) ? (int)constant + 1 : (short)constant + 1;
+                        break;
+                    case '=':
+                        range.First = range.Second = constant;
+                        break;
+                    default:
+                        throw new Exception($"Invalid operator {op} supplied to OneVariableCases");
                 }
                 if(constant.GetType() == typeof(float) || constant.GetType() == typeof(double))
                 {
+                    Random r = new Random();
                     foreach(var values in from e in res select e.First.Values)
                     {
                         foreach(var key in values.Keys)
@@ -188,6 +187,7 @@ namespace TestGenerator
             }
             else if (expression[1].GetType() == typeof(string))
             {
+                op = FlipOperator(op);
                 return OneVariableCases((string)expression[1], expression[0]);
             }
             else
@@ -199,14 +199,13 @@ namespace TestGenerator
         {
             string condition = statement.Value.Substring(statement.Value.IndexOf(' ')).Replace(" ", "");
             string[] operands = condition.Split(new string[] { "<", ">", "==", "<=", ">=" }, StringSplitOptions.None);
-            string op = null;
+            string op = "";
             if (condition.Contains("<")) op = "<";
             else if (condition.Contains(">")) op = ">";
             else if (condition.Contains("==")) op = "==";
             else if (condition.Contains(">=")) op = ">=";
             else if (condition.Contains("<=")) op = "<=";
             else throw new UserViewableException($"CaseGenerator: Invalid condition \"{condition}\": operator not recognized");
-            if (op == null) op = "";
             object[] expression = new object[2];
             void deriveExpressionPart(ref object expressionPart, string operand)
             {
@@ -246,11 +245,13 @@ namespace TestGenerator
         static List<TestCase> Solve(Statement statement, Dictionary<string, Pair<object, object>> variables, Dictionary<string, object> constants)
         {
             List<Pair<TestCase, int>> myCases = null;
+            Dictionary<string, Pair<object, object>> tmpVariables = new Dictionary<string, Pair<object, object>>(variables);
             string[] tokens = DigestLine(statement.Value);
             switch (statement.statmentType)
             {
                 case StatementType.Read:
                     variables.Add(tokens[0], new Pair<object, object>(null, null));
+                    tmpVariables.Add(tokens[0], new Pair<object, object>(null, null));
                     if (constants.ContainsKey(tokens[0])) constants.Remove(tokens[0]);
                     break;
                 case StatementType.Value:
@@ -259,7 +260,7 @@ namespace TestGenerator
                     if (!constants.TryAdd(tokens[0], value)) constants[tokens[0]] = value;
                     break;
                 case StatementType.Condition:
-                    myCases = EvaluateTestCases(statement, variables, constants);
+                    myCases = EvaluateTestCases(statement, tmpVariables, constants);
                     break;
             }
             if (myCases == null)
@@ -278,7 +279,7 @@ namespace TestGenerator
             int i = 0;
             foreach (Statement next in statement.nextStatements)
             {
-                Merge(cases[i], Solve(next, variables, constants));
+                Merge(cases[i], Solve(next, tmpVariables, constants));
                 i++;
             }
             cases[0].AddRange(cases[1]);
