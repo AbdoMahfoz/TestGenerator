@@ -8,21 +8,45 @@ namespace TestGenerator
     {
         static void Merge(List<TestCase> a, List<TestCase> b)
         {
-            foreach(TestCase t in b)
+            List<TestCase> bin = new List<TestCase>();
+            TestCase[] baseCases = a.ToArray();
+            foreach(TestCase t2 in b)
             {
-                bool found = false;
-                foreach(TestCase t2 in a)
+                if (baseCases.Length > 0)
                 {
-                    if(t == t2)
+                    foreach (TestCase t in baseCases)
                     {
-                        found = true;
-                        break;
+                        TestCase tmp = new TestCase()
+                        {
+                            Values = new Dictionary<string, object>(t.Values)
+                        };
+                        bool eraseTest = false;
+                        bool dontErase = false;
+                        foreach (var key in t2.Values.Keys)
+                        {
+                            if (!t.Values.Keys.Contains(key))
+                            {
+                                eraseTest = true;
+                                tmp.Values.Add(key, t2.Values[key]);
+                            }
+                            else
+                            {
+                                dontErase = true;
+                                tmp.Values[key] = t2.Values[key];
+                            }
+                        }
+                        a.Add(tmp);
+                        if (eraseTest && !dontErase) bin.Add(t);
                     }
                 }
-                if(!found)
+                else
                 {
-                    a.Add(t);
+                    a.Add(t2);
                 }
+            }
+            foreach(TestCase t in bin)
+            {
+                if(a.Contains(t)) a.Remove(t);
             }
         }
         static string[] DigestLine(string line)

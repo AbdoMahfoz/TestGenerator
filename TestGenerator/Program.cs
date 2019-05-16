@@ -34,7 +34,7 @@ namespace TestGenerator
             {
                 ConsoleColor oldColor = Console.ForegroundColor;
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"The given code requires a non implemented feature: {n.Message}");
+                Console.WriteLine($"The given code requires a non implemented functionality: {n.Message}");
                 Console.ForegroundColor = oldColor;
             }
         }
