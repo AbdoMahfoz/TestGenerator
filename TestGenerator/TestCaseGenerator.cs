@@ -59,25 +59,55 @@ namespace TestGenerator
                 Random r = new Random(DateTime.Now.Second);
                 if (constant.GetType() != typeof(short))
                 {
-                    res.Add(new TestCase
+                    res.AddRange(new TestCase[]
                     {
-                        Values = new Dictionary<string, object>()
+                        new TestCase
                         {
-                            { varName, r.Next((int)constant - 1) },
-                            { varName, r.Next((int)constant + 1, int.MaxValue) },
-                            { varName, constant }
+                            Values = new Dictionary<string, object>()
+                            {
+                                { varName, r.Next((int)constant - 1) }
+                            }
+                        },
+                        new TestCase
+                        {
+                            Values = new Dictionary<string, object>
+                            {
+                                { varName, r.Next((int)constant + 1, int.MaxValue) }
+                            }
+                        },
+                        new TestCase
+                        {
+                            Values = new Dictionary<string, object>
+                            {
+                                { varName, constant }
+                            }
                         }
                     });
                 }
                 else
                 {
-                    res.Add(new TestCase
+                    res.AddRange(new TestCase[]
                     {
-                        Values = new Dictionary<string, object>()
+                        new TestCase
                         {
-                            { varName, r.Next((short)constant - 1) },
-                            { varName, r.Next((short)constant + 1, short.MaxValue) },
-                            { varName, constant }
+                            Values = new Dictionary<string, object>()
+                            {
+                                { varName, r.Next((short)constant - 1) }
+                            }
+                        },
+                        new TestCase
+                        {
+                            Values = new Dictionary<string, object>
+                            {
+                                { varName, r.Next((short)constant + 1, short.MaxValue) }
+                            }
+                        },
+                        new TestCase
+                        {
+                            Values = new Dictionary<string, object>
+                            {
+                                { varName, constant }
+                            }
                         }
                     });
                 }
@@ -147,7 +177,7 @@ namespace TestGenerator
             }
             deriveExpressionPart(ref expression[0], operands[0]);
             deriveExpressionPart(ref expression[1], operands[1]);
-            if(expression[0] is string s)
+            if(expression[0] is string s && expression[1].GetType() != typeof(string))
             {
                 if(statement.testProgram.variables[s] != expression[1].GetType())
                 {
@@ -155,7 +185,7 @@ namespace TestGenerator
                         $"Variable {s} of type {statement.testProgram.variables[s].Name} is being compared with {operands[1]} of type {expression[1].GetType().Name}");
                 }
             }
-            else if(expression[1] is string s2)
+            else if(expression[1] is string s2 && expression[0].GetType() != typeof(string))
             {
                 if (statement.testProgram.variables[s2] != expression[0].GetType())
                 {
@@ -202,6 +232,20 @@ namespace TestGenerator
                 constants.Add(variable.Key, Activator.CreateInstance(variable.Value));
             }
             return Solve(testProgram.rootStatement, new Dictionary<string, Pair<object, object>>(), constants).ToArray();
+        }
+        static public void DisplayTestCases(params TestCase[] testCases)
+        {
+            Console.WriteLine("Test cases:");
+            int i = 0;
+            foreach(var test in testCases)
+            {
+                i++;
+                Console.WriteLine($"\tTest case #{i}:");
+                foreach(var pair in test.Values)
+                {
+                    Console.WriteLine($"\t\t{pair.Key} = {pair.Value.ToString()}");
+                }
+            }
         }
     }
 }

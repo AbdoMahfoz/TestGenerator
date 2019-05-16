@@ -38,27 +38,21 @@ namespace TestGenerator
                     }
                     Console.WriteLine();
                 }
+                TestCaseGenerator.DisplayTestCases(TestCaseGenerator.GetTestCases(testProgram));
             }
-            catch(Exception e)
+            catch(UserViewableException v)
             {
-                if(e is UserViewableException v)
-                {
-                    ConsoleColor oldColor = Console.ForegroundColor;
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"Fatal Error:{e.Message}");
-                    Console.ForegroundColor = oldColor;
-                }
-                else if(e is NotImplementedException n)
-                {
-                    ConsoleColor oldColor = Console.ForegroundColor;
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"The given code required a non implemented feature: {e.Message}");
-                    Console.ForegroundColor = oldColor;
-                }
-                else
-                {
-                    throw e;
-                }
+                ConsoleColor oldColor = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Fatal Error: {v.Message}");
+                Console.ForegroundColor = oldColor;
+            }
+            catch(NotImplementedException n)
+            {
+                ConsoleColor oldColor = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"The given code requires a non implemented feature: {n.Message}");
+                Console.ForegroundColor = oldColor;
             }
         }
     }
