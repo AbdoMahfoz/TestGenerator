@@ -18,26 +18,9 @@ namespace TestGenerator
                 Console.Write("Enter file name: ");
                 string fileName = Console.ReadLine().Trim();
                 TestProgram testProgram = TestProgramManager.GetProgram(fileName);
-                TestProgramManager.DisplayProgram(testProgram);
-                Console.WriteLine("Paths:");
-                Statement[][] paths = TestProgramManager.GetAllPaths(testProgram);
-                foreach(Statement[] path in paths)
-                {
-                    bool first = true;
-                    foreach(Statement node in path)
-                    {
-                        if(!first)
-                        {
-                            Console.Write("->");
-                        }
-                        else
-                        {
-                            first = false;
-                        }
-                        Console.Write($"({node.Value})");
-                    }
-                    Console.WriteLine();
-                }
+                TestProgramManager.DisplayVariables(testProgram);
+                TestProgramManager.DisplayGraph(testProgram);
+                TestProgramManager.DisplayPaths(TestProgramManager.GetAllPaths(testProgram));
                 TestCaseGenerator.DisplayTestCases(TestCaseGenerator.GetTestCases(testProgram));
             }
             catch(UserViewableException v)

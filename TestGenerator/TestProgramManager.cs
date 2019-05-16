@@ -104,26 +104,29 @@ namespace TestGenerator
             }
             return testProgram;
         }
-        static public void DisplayProgram(TestProgram testProgram)
+        static public void DisplayVariables(TestProgram testProgram)
         {
-            Console.WriteLine("Program:\n\tVariables:");
+            Console.WriteLine("Variables:");
             foreach (KeyValuePair<string, Type> variable in testProgram.variables)
             {
-                Console.WriteLine($"\t\t{variable.Key} : {variable.Value.FullName}");
+                Console.WriteLine($"\t{variable.Key} : {variable.Value.FullName}");
             }
-            Console.WriteLine("\tGraph:");
+        }
+        static public void DisplayGraph(TestProgram testProgram)
+        {
+            Console.WriteLine("Graph:");
             int conditions = 0;
             Statement currentStatement = testProgram.rootStatement;
             while (true)
             {
-                Console.Write("\t\t");
+                Console.Write("\t");
                 for (int i = 0; i < conditions; i++)
                 {
                     Console.Write(" |");
                 }
                 Console.WriteLine($" {currentStatement.Value}");
                 if (currentStatement.nextStatements.Count == 0) break;
-                Console.Write("\t\t");
+                Console.Write("\t");
                 for (int i = 0; i < conditions; i++)
                 {
                     Console.Write(" |");
@@ -164,6 +167,27 @@ namespace TestGenerator
             }
             getPath(testProgram.rootStatement);
             return paths.ToArray();
+        }
+        static public void DisplayPaths(Statement[][] paths)
+        {
+            Console.WriteLine("Paths:");
+            foreach (Statement[] path in paths)
+            {
+                bool first = true;
+                foreach (Statement node in path)
+                {
+                    if (!first)
+                    {
+                        Console.Write("->");
+                    }
+                    else
+                    {
+                        first = false;
+                    }
+                    Console.Write($"({node.Value})");
+                }
+                Console.WriteLine();
+            }
         }
     }
 }
