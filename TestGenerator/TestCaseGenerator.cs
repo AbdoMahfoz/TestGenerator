@@ -75,69 +75,93 @@ namespace TestGenerator
             }
             throw new Exception("An unknown variable type attempted to parse it's value string. Please update TestCaseGenerator.GetValue method");
         }
-        static List<TestCase> GetCasesFromExpression(object[] expression, Dictionary<string, Pair<object, object>> variables)
+        static List<Pair<TestCase, int>> GetCasesFromExpression(object[] expression, string op, Dictionary<string, Pair<object, object>> variables)
         {
-            List<TestCase> OneVariableCases(string varName, object constant)
+            List<Pair<TestCase, int>> OneVariableCases(string varName, object constant)
             {
-                List<TestCase> res = new List<TestCase>();
+                List<Pair<TestCase, int>> res = new List<Pair<TestCase, int>>();
                 Random r = new Random(DateTime.Now.Second);
                 if (constant.GetType() != typeof(short))
                 {
-                    res.AddRange(new TestCase[]
+                    res.AddRange(new Pair<TestCase, int>[]
                     {
-                        new TestCase
+                        new Pair<TestCase, int>
                         {
-                            Values = new Dictionary<string, object>()
+                            First = new TestCase
                             {
-                                { varName, r.Next((int)constant - 1) }
-                            }
+                                Values = new Dictionary<string, object>()
+                                {
+                                    { varName, r.Next((int)constant - 1) }
+                                }
+                            },
+                            Second = (op[0] == '<') ? 0 : 1
                         },
-                        new TestCase
+                        new Pair<TestCase, int>
                         {
-                            Values = new Dictionary<string, object>
+                            First = new TestCase
                             {
-                                { varName, r.Next((int)constant + 1, int.MaxValue) }
-                            }
+                                Values = new Dictionary<string, object>()
+                                {
+                                    { varName, r.Next((int)constant + 1, int.MaxValue) }
+                                }
+                            },
+                            Second = (op[0] == '>') ? 0 : 1
                         },
-                        new TestCase
+                        new Pair<TestCase, int>
                         {
-                            Values = new Dictionary<string, object>
+                            First = new TestCase
                             {
-                                { varName, constant }
-                            }
-                        }
+                                Values = new Dictionary<string, object>()
+                                {
+                                    { varName, constant }
+                                }
+                            },
+                            Second = (op.Length == 2) ? 0 : 1
+                        },
                     });
                 }
                 else
                 {
-                    res.AddRange(new TestCase[]
+                    res.AddRange(new Pair<TestCase, int>[]
                     {
-                        new TestCase
+                        new Pair<TestCase, int>
                         {
-                            Values = new Dictionary<string, object>()
+                            First = new TestCase
                             {
-                                { varName, r.Next((short)constant - 1) }
-                            }
+                                Values = new Dictionary<string, object>()
+                                {
+                                    { varName, r.Next((short)constant - 1) }
+                                }
+                            },
+                            Second = (op[0] == '<') ? 0 : 1
                         },
-                        new TestCase
+                        new Pair<TestCase, int>
                         {
-                            Values = new Dictionary<string, object>
+                            First = new TestCase
                             {
-                                { varName, r.Next((short)constant + 1, short.MaxValue) }
-                            }
+                                Values = new Dictionary<string, object>()
+                                {
+                                    { varName, r.Next((short)constant + 1, short.MaxValue) }
+                                }
+                            },
+                            Second = (op[0] == '>') ? 0 : 1
                         },
-                        new TestCase
+                        new Pair<TestCase, int>
                         {
-                            Values = new Dictionary<string, object>
+                            First = new TestCase
                             {
-                                { varName, constant }
-                            }
-                        }
-                    });
+                                Values = new Dictionary<string, object>()
+                                {
+                                    { varName, constant }
+                                }
+                            },
+                            Second = (op.Length == 2) ? 0 : 1
+                        },
+                    }); ;
                 }
                 if(constant.GetType() == typeof(float) || constant.GetType() == typeof(double))
                 {
-                    foreach(var values in from e in res select e.Values)
+                    foreach(var values in from e in res select e.First.Values)
                     {
                         foreach(var key in values.Keys)
                         {
@@ -168,10 +192,10 @@ namespace TestGenerator
             }
             else
             {
-                return new List<TestCase>();
+                return new List<Pair<TestCase, int>>();
             }
         }
-        static List<TestCase> EvaluateTestCases(Statement statement, Dictionary<string, Pair<object, object>> variables, Dictionary<string, object> constants)
+        static List<Pair<TestCase, int>> EvaluateTestCases(Statement statement, Dictionary<string, Pair<object, object>> variables, Dictionary<string, object> constants)
         {
             string condition = statement.Value.Substring(statement.Value.IndexOf(' ')).Replace(" ", "");
             string[] operands = condition.Split(new string[] { "<", ">", "==", "<=", ">=" }, StringSplitOptions.None);
@@ -217,11 +241,11 @@ namespace TestGenerator
                         $"Variable {s2} of type {statement.testProgram.variables[s2].Name} is being compared with {operands[0]} of type {expression[0].GetType().Name}");
                 }
             }
-            return GetCasesFromExpression(expression, variables);
+            return GetCasesFromExpression(expression, op, variables);
         }
         static List<TestCase> Solve(Statement statement, Dictionary<string, Pair<object, object>> variables, Dictionary<string, object> constants)
         {
-            List<TestCase> myCases = null;
+            List<Pair<TestCase, int>> myCases = null;
             string[] tokens = DigestLine(statement.Value);
             switch (statement.statmentType)
             {
@@ -240,13 +264,25 @@ namespace TestGenerator
             }
             if (myCases == null)
             {
-                myCases = new List<TestCase>();
+                myCases = new List<Pair<TestCase, int>>();
             }
+            List<List<TestCase>> cases = new List<List<TestCase>>
+            {
+                new List<TestCase>(),
+                new List<TestCase>()
+            };
+            foreach(var c in myCases)
+            {
+                cases[c.Second].Add(c.First);
+            }
+            int i = 0;
             foreach (Statement next in statement.nextStatements)
             {
-                Merge(myCases, Solve(next, variables, constants));
+                Merge(cases[i], Solve(next, variables, constants));
+                i++;
             }
-            return myCases;
+            cases[0].AddRange(cases[1]);
+            return cases[0];
         }
         static public TestCase[] GetTestCases(TestProgram testProgram)
         {
@@ -257,7 +293,7 @@ namespace TestGenerator
             }
             return Solve(testProgram.rootStatement, new Dictionary<string, Pair<object, object>>(), constants).ToArray();
         }
-        static public void DisplayTestCases(params TestCase[] testCases)
+        static public void DisplayTestCases(TestProgram testProgram, params TestCase[] testCases)
         {
             Console.WriteLine("Test cases:");
             int i = 0;
@@ -265,9 +301,16 @@ namespace TestGenerator
             {
                 i++;
                 Console.WriteLine($"\tTest case #{i}:");
-                foreach(var pair in test.Values)
+                foreach(var variable in testProgram.variables.Keys)
                 {
-                    Console.WriteLine($"\t\t{pair.Key} = {pair.Value.ToString()}");
+                    if(test.Values.TryGetValue(variable, out object val))
+                    {
+                        Console.WriteLine($"\t\t{variable} = {val.ToString()}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"\t\t{variable} = ---");
+                    }
                 }
             }
         }
