@@ -263,6 +263,8 @@ namespace TestGenerator
                 case StatementType.Condition:
                     myCases = EvaluateTestCases(statement, tmpVariables, constants);
                     break;
+                case StatementType.Loop:
+                    throw new NotImplementedException("Loops are not implemented yet");
             }
             if (myCases == null)
             {
@@ -313,6 +315,11 @@ namespace TestGenerator
                     {
                         Console.WriteLine($"\t\t{variable} = ---");
                     }
+                }
+                Console.WriteLine("\t\tOutput:");
+                foreach(string s in CodeRunner.RunProgram(testProgram, test))
+                {
+                    Console.WriteLine($"\t\t\t{s}");
                 }
             }
         }

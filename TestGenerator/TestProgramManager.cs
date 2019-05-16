@@ -174,6 +174,7 @@ namespace TestGenerator
             foreach (Statement[] path in paths)
             {
                 bool first = true;
+                Console.Write('\t');
                 foreach (Statement node in path)
                 {
                     if (!first)

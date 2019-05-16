@@ -21,7 +21,8 @@ namespace TestGenerator
                 TestProgramManager.DisplayVariables(testProgram);
                 TestProgramManager.DisplayGraph(testProgram);
                 TestProgramManager.DisplayPaths(TestProgramManager.GetAllPaths(testProgram));
-                TestCaseGenerator.DisplayTestCases(testProgram, TestCaseGenerator.GetTestCases(testProgram));
+                TestCase[] testCases = TestCaseGenerator.GetTestCases(testProgram);
+                TestCaseGenerator.DisplayTestCases(testProgram, testCases);
             }
             catch(UserViewableException v)
             {
