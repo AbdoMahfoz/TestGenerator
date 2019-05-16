@@ -29,7 +29,7 @@ namespace TestGenerator
                                 eraseTest = true;
                                 tmp.Values.Add(key, t2.Values[key]);
                             }
-                            else
+                            else if(!t.Values[key].Equals(t2.Values[key]))
                             {
                                 dontErase = true;
                                 tmp.Values[key] = t2.Values[key];
@@ -136,7 +136,7 @@ namespace TestGenerator
                         Second = (op.Length == 2) ? 0 : 1
                     },
                 });
-                Pair<object, object> range = variables[varName];
+                Pair<object, object> range = new Pair<object, object>();
                 switch(op[0])
                 {
                     case '<':
@@ -147,9 +147,9 @@ namespace TestGenerator
                         break;
                     case '>':
                         if (op.Length > 1)
-                            range.Second = (constant.GetType() == typeof(int)) ? (int)constant : (short)constant;
+                            range.First = (constant.GetType() == typeof(int)) ? (int)constant : (short)constant;
                         else
-                            range.Second = (constant.GetType() == typeof(int)) ? (int)constant + 1 : (short)constant + 1;
+                            range.First = (constant.GetType() == typeof(int)) ? (int)constant + 1 : (short)constant + 1;
                         break;
                     case '=':
                         range.First = range.Second = constant;
@@ -157,6 +157,7 @@ namespace TestGenerator
                     default:
                         throw new Exception($"Invalid operator {op} supplied to OneVariableCases");
                 }
+                variables[varName] = range;
                 if(constant.GetType() == typeof(float) || constant.GetType() == typeof(double))
                 {
                     Random r = new Random();
