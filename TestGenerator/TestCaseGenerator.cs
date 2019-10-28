@@ -40,7 +40,10 @@ namespace TestGenerator
             else if (condition.Contains(">=")) op = ">=";
             else if (condition.Contains("<=")) op = "<=";
             else throw new UserViewableException($"CaseGenerator: Invalid condition \"{condition}\": operator not recognized");
-
+            List<object> expression = new List<object>();
+            if(variables.Contains(operands[0])) expression.Add(operands[0]);
+            else expression.Add(constants[operands[0]]);
+            
             return res;
         }
         static List<TestCase> Solve(Statement statement, SortedSet<string> variables, Dictionary<string, object> constants)

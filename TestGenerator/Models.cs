@@ -53,4 +53,15 @@ namespace TestGenerator
         public UserViewableException() : base() { }
         public UserViewableException(string message) : base(message) { }
     }
+    public class Pair<TFirst, TSecond>
+    {
+        public TFirst First { get; set; }
+        public TSecond Second { get; set; }
+        public Pair(TFirst First, TSecond Second)
+        {
+            this.First = First;
+            this.Second = Second;
+        }
+        public Pair() {}
+    }
 }
