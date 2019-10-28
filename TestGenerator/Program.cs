@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 
 namespace TestGenerator
 {
@@ -20,32 +18,24 @@ namespace TestGenerator
                 Console.Write("Enter file name: ");
                 string fileName = Console.ReadLine().Trim();
                 TestProgram testProgram = TestProgramManager.GetProgram(fileName);
-                TestProgramManager.DisplayProgram(testProgram);
-                Console.WriteLine("Paths:");
-                Statement[][] paths = TestProgramManager.GetAllPaths(testProgram);
-                foreach(Statement[] path in paths)
-                {
-                    bool first = true;
-                    foreach(Statement node in path)
-                    {
-                        if(!first)
-                        {
-                            Console.Write("->");
-                        }
-                        else
-                        {
-                            first = false;
-                        }
-                        Console.Write($"({node.Value})");
-                    }
-                    Console.WriteLine();
-                }
+                TestProgramManager.DisplayVariables(testProgram);
+                TestProgramManager.DisplayGraph(testProgram);
+                TestProgramManager.DisplayPaths(TestProgramManager.GetAllPaths(testProgram));
+                TestCase[] testCases = TestCaseGenerator.GetTestCases(testProgram);
+                TestCaseGenerator.DisplayTestCases(testProgram, testCases);
             }
-            catch(UserViewableException e)
+            catch(UserViewableException v)
             {
                 ConsoleColor oldColor = Console.ForegroundColor;
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"Fatal Error: {e.Message}");
+                Console.WriteLine($"Fatal Error: {v.Message}");
+                Console.ForegroundColor = oldColor;
+            }
+            catch(NotImplementedException n)
+            {
+                ConsoleColor oldColor = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"The given code requires a non implemented functionality: {n.Message}");
                 Console.ForegroundColor = oldColor;
             }
         }

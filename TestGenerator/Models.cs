@@ -36,7 +36,7 @@ namespace TestGenerator
             this.nextStatements = new List<Statement>(nextStatements);
         }
     }
-    public class TestCase
+    public class TestCase : IEquatable<TestCase>
     {
         public Dictionary<string, object> Values;
         public TestCase()
@@ -47,21 +47,52 @@ namespace TestGenerator
         {
             this.Values = new Dictionary<string, object>(Values);
         }
-    }
-    public class UserViewableException : Exception
-    {
-        public UserViewableException() : base() { }
-        public UserViewableException(string message) : base(message) { }
+        public bool Equals(TestCase other)
+        {
+            if(Values.Keys.Count != other.Values.Keys.Count)
+            {
+                return false;
+            }
+            foreach(var key in Values.Keys)
+            {
+                if(!other.Values.ContainsKey(key) || Values[key] != other.Values[key])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+        public static bool operator==(TestCase t1, TestCase t2)
+        {
+            return t1.Equals(t2);
+        }
+        public static bool operator!=(TestCase t1, TestCase t2)
+        {
+            return !t1.Equals(t2);
+        }
     }
     public class Pair<TFirst, TSecond>
     {
-        public TFirst First { get; set; }
-        public TSecond Second { get; set; }
+        public TFirst First;
+        public TSecond Second;
         public Pair(TFirst First, TSecond Second)
         {
             this.First = First;
             this.Second = Second;
         }
         public Pair() {}
+    }
+    public class UserViewableException : Exception
+    {
+        public UserViewableException() : base() { }
+        public UserViewableException(string message) : base(message) { }
     }
 }
